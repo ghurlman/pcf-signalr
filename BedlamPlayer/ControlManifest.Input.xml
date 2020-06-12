@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="DemoComponents" constructor="BedlamPlayer" version="0.0.1" display-name-key="BedlamPlayer" description-key="BedlamPlayer description" control-type="standard">
+    <!-- property node identifies a specific, configurable piece of data that the control expects from CDS -->
+    <property name="signalRHubConnectionUrl" display-name-key="signalRHubConnectionUrl" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="input" required="true" />
+    <property name="messageToSend" display-name-key="messageToSend" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="input" required="true" />
+    <property name="messageReceivedType" display-name-key="messageReceivedType" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="output" required="true" />
+    <property name="messageReceivedText" display-name-key="messageReceivedText" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="output" required="true" />
+    <property name="messageReceivedSender" display-name-key="messageReceivedSender" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="output" required="true" />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <!-- UNCOMMENT TO ADD MORE RESOURCES
+      <css path="css/BedlamPlayer.css" order="1" />
+      <resx path="strings/BedlamPlayer.1033.resx" version="1.0.0" />
+      -->
+    </resources>
+  </control>
+</manifest>
