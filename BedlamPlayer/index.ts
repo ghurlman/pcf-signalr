@@ -1,14 +1,17 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
 import * as SignalR from "@aspnet/signalr";
-import { ReceivedModel } from "./ReceivedModel";
+import { IBedlamMessage } from "./IBedlamMessage";
+import { v4 as NewGuid } from 'uuid';
 
 export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs, IOutputs> {
 
-	private _receivedMessage: ReceivedModel;
+	private _message: IBedlamMessage;
 	private _notifyOutputChanged: () => void;
 	private _context: ComponentFramework.Context<IInputs>;
-	private connection: signalR.HubConnection;
+	private _connection?: signalR.HubConnection;
 	private _signalRApi: string;
+	private _userId: string | null;
+	lastId: string;
 
 	/**
 	 * Empty constructor.
@@ -36,23 +39,33 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 			//Create the connection to SignalR Hub
 			this.OpenConnection();
 		}
+
+		container.style.backgroundColor = "#663399";
+		container.style.border = "2px solid black";
+		container.style.borderRadius = "10px"
+		container.innerHTML = "<div style='height: 100%; width: 100%'></div>"
 	}
 
 	private OpenConnection() {
-		this.connection = new SignalR.HubConnectionBuilder()
+		this._connection = new SignalR.HubConnectionBuilder()
 			.withUrl(this._signalRApi)
 			.configureLogging(SignalR.LogLevel.Information) // for debug
 			.build();
 
 		//configure the event when a new message arrives
-		this.connection.on("newMessage", (message: ReceivedModel) => {
-			this._receivedMessage = message;
-			this._notifyOutputChanged();
+		this._connection.on("newMessage", (message: IBedlamMessage) => {
+			this._message = message;
+			if (this.lastId != message.messageID) {
+				this._notifyOutputChanged();
+			}
 		});
 
+		this._connection.serverTimeoutInMilliseconds = 1000 * 60 * 15;
+		this._connection.keepAliveIntervalInMilliseconds = 100 * 60 * 5;
+
 		//connect
-		this.connection.start()
-			.catch(err => console.log(err));
+		this._connection.start()
+			.catch(err => { console.log(err); this._connection!.stop(); });
 	}
 
 	/**
@@ -63,17 +76,36 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 		// Add code to update control view
 		//When the MessageToSend is updated this code will run and we send the message to signalR
 		this._context = context;
+		this._userId = context.parameters.userID.raw;
+
+		if (context.parameters.sendMessage.raw == "true"
+			&& context.parameters.messageData.raw) {
+			this.lastId = NewGuid();
+			let msg: IBedlamMessage = {
+				messageID: this.lastId,
+				type: context.parameters.messageType.raw,
+				sender: context.parameters.userID.raw ?? "table"
+			}
+
+			switch (msg.type) {
+				case 'add-user':
+				case 'remove-user':
+					msg.userId = context.parameters.messageData.raw;
+					break;
+				case 'new-card':
+				case 'played-card':
+					msg.cardId = Number.parseInt(context.parameters.messageData.raw);
+			}
+	
+			this.httpCall(msg);
+		}
 
 		if (context.parameters.signalRHubConnectionUrl.raw &&
-				context.parameters.signalRHubConnectionUrl.raw !=
-				this._signalRApi) {
-					this._signalRApi = context.parameters.signalRHubConnectionUrl.raw;
-					this.OpenConnection();
-				}
-
-		let messageToSend = JSON.parse(this._context.parameters.messageToSend.raw != null ?
-			this._context.parameters.messageToSend.raw : "");
-		this.httpCall(messageToSend, (res) => { console.log(res) });
+			context.parameters.signalRHubConnectionUrl.raw !=
+			this._signalRApi) {
+			this._signalRApi = context.parameters.signalRHubConnectionUrl.raw;
+			this.OpenConnection();
+		}
 	}
 
 	/** 
@@ -82,19 +114,30 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 	 */
 	public getOutputs(): IOutputs {
 		//This code will run when we call notifyOutputChanged when we receive a new message
-		//here is where the message gets exposed to outside
-		return {
-			messageReceivedText: this._receivedMessage.text,
-			messageReceivedType: this._receivedMessage.type,
-			messageReceivedSender: this._receivedMessage.sender
-		};
+		let output: IOutputs = {
+			messageReceivedType: this._message.type,
+			messageReceivedSender: this._message.sender
+		}
+
+		switch (this._message.type) {
+			case 'add-user':
+			case 'remove-user':
+				output.messageReceivedData = this._message.userId;
+				break;
+			case 'new-card':
+			case 'played-card':
+				output.messageReceivedData = this._message.cardId?.toString();
+		}
+
+		return output;
 	}
 
-	public httpCall(data: any, callback: (result: any) => any): void {
+	public httpCall(data: IBedlamMessage, callback?: (result: any) => any): void {
 		var xhr = new XMLHttpRequest();
 		xhr.open("post", this._signalRApi + "/messages", true);
 		if (data != null) {
 			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.setRequestHeader('x-ms-client-principal-name', this._userId!)
 			xhr.send(JSON.stringify(data));
 		}
 		else xhr.send();
@@ -106,6 +149,6 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 	 */
 	public destroy(): void {
 		// Add code to cleanup control if necessary
-		this.connection.stop();
+		if (this._connection) this._connection.stop();
 	}
 }

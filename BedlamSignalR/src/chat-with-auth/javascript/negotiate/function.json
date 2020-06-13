@@ -5,10 +5,7 @@
       "authLevel": "anonymous",
       "type": "httpTrigger",
       "direction": "in",
-      "name": "req",
-      "methods": [
-        "post"
-      ]
+      "name": "req"
     },
     {
       "type": "http",
@@ -16,10 +13,10 @@
       "name": "res"
     },
     {
-      "type": "signalR",
-      "name": "$return",
+      "type": "signalRConnectionInfo",
+      "name": "connectionInfo",
       "hubName": "chat",
-      "direction": "out"
+      "direction": "in"
     }
   ]
 }
