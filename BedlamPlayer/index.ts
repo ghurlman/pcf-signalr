@@ -40,10 +40,13 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 			this.OpenConnection();
 		}
 
-		container.style.backgroundColor = "#663399";
-		container.style.border = "2px solid black";
-		container.style.borderRadius = "10px"
-		container.innerHTML = "<div style='height: 100%; width: 100%'></div>"
+		const innerDiv = document.createElement("div");
+		innerDiv.style.backgroundColor = "#663399";
+		innerDiv.style.border = "2px solid black";
+		innerDiv.style.borderRadius = "10px"
+		innerDiv.style.height = "100%";
+		innerDiv.style.width = "100%";
+		container.appendChild(innerDiv)
 	}
 
 	private OpenConnection() {
@@ -53,12 +56,7 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 			.build();
 
 		//configure the event when a new message arrives
-		this._connection.on("newMessage", (message: IBedlamMessage) => {
-			this._message = message;
-			if (this.lastId != message.messageID) {
-				this._notifyOutputChanged();
-			}
-		});
+		this._connection.on("newMessage", this.processNewMessage.bind(this));
 
 		this._connection.serverTimeoutInMilliseconds = 1000 * 60 * 15;
 		this._connection.keepAliveIntervalInMilliseconds = 100 * 60 * 5;
@@ -79,25 +77,9 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 		this._userId = context.parameters.userID.raw;
 
 		if (context.parameters.sendMessage.raw == "true"
-			&& context.parameters.messageData.raw) {
-			this.lastId = NewGuid();
-			let msg: IBedlamMessage = {
-				messageID: this.lastId,
-				type: context.parameters.messageType.raw,
-				sender: context.parameters.userID.raw ?? "table"
-			}
-
-			switch (msg.type) {
-				case 'add-user':
-				case 'remove-user':
-					msg.userId = context.parameters.messageData.raw;
-					break;
-				case 'new-card':
-				case 'played-card':
-					msg.cardId = Number.parseInt(context.parameters.messageData.raw);
-			}
-	
-			this.httpCall(msg);
+			&& context.parameters.messageData.raw
+			&& context.parameters.userID.raw) {
+			this.sendMessage(context);
 		}
 
 		if (context.parameters.signalRHubConnectionUrl.raw &&
@@ -106,6 +88,31 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 			this._signalRApi = context.parameters.signalRHubConnectionUrl.raw;
 			this.OpenConnection();
 		}
+	}
+
+	private sendMessage(context: ComponentFramework.Context<IInputs>) {
+		this.lastId = NewGuid();
+		let msg: IBedlamMessage = {
+			messageID: this.lastId,
+			type: context.parameters.messageType.raw,
+			sender: context.parameters.userID.raw!,
+			recipient: context.parameters.recipientID.raw!
+		};
+
+		switch (msg.type) {
+			case 'add-user':
+			case 'remove-user':
+				msg.userId = context.parameters.messageData.raw!;
+				break;
+			case 'new-card':
+			case 'played-card':
+				msg.cardId =
+					context.parameters.messageData.raw!
+						.split(',')
+						.map(val => Number.parseInt(val));
+		}
+
+		this.httpCall(msg);
 	}
 
 	/** 
@@ -126,10 +133,24 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 				break;
 			case 'new-card':
 			case 'played-card':
+			case 'next-card':
+			case 'prev-card':
+			case 'fave-card':
+			case 'unfave-card':
+			case 'choose-winner':
 				output.messageReceivedData = this._message.cardId?.toString();
 		}
 
 		return output;
+	}
+
+	private processNewMessage(message: IBedlamMessage): void {
+		this._message = message;
+		if (this.lastId != message.messageID
+			&& this._context.parameters.userID.raw == message.recipient
+		) {
+			this._notifyOutputChanged();
+		}
 	}
 
 	public httpCall(data: IBedlamMessage, callback?: (result: any) => any): void {

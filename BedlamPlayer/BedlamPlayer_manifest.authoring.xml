@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<authoring-manifest schema-version="1.0">
+  <group>
+    <section>
+      <property name="signalRHubConnectionUrl" />
+      <property name="messageType" />
+      <property name="messageData" />
+      <property name="userID" />
+      <property name="recipientID" />
+      <property name="sendMessage" />
+    </section>
+    <section>
+      <property-group name="Position">
+        <property name="X" />
+        <property name="Y" />
+      </property-group>
+      <property-group name="Size">
+        <property name="Width" />
+        <property name="Height" />
+      </property-group>
+    </section>
+  </group>
+</authoring-manifest>
