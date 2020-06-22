@@ -14,5 +14,6 @@ export interface IBedlamMessage {
     'new-card' |
     'played-card' |
     'add-user' |
-    'remove-user';
+    'remove-user' |
+    'ack-user';
 }

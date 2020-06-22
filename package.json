@@ -9,7 +9,7 @@
     "start": "pcf-scripts start"
   },
   "dependencies": {
-    "@aspnet/signalr": "^1.1.4",
+    "@microsoft/signalr": "^3.1.5",
     "@types/node": "^10.12.18",
     "@types/powerapps-component-framework": "^1.2.0",
     "@types/uuid": "^8.0.0",

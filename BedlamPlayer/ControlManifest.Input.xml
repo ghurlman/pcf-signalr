@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="DemoComponents" constructor="BedlamPlayer" version="0.0.1" authoring-manifest="BedlamPlayer_manifest.authoring.xml" display-name-key="Bedlam Player" description-key="BedlamPlayer description" control-type="standard">
+  <control namespace="DemoComponents" constructor="BedlamPlayer" version="0.0.2" authoring-manifest="BedlamPlayer_manifest.authoring.xml" display-name-key="Bedlam Player" description-key="BedlamPlayer description" control-type="standard">
     <!-- property node identifies a specific, configurable piece of data that the control expects from CDS -->
     <property name="signalRHubConnectionUrl" display-name-key="SignalR Hub Connection Url" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="input" required="true" />
     <property name="messageType" display-name-key="Message Type" description-key="Property_Desc_Key" of-type="Enum" usage="input" required="true">
@@ -14,6 +14,7 @@
       <value name="PlayedCard" display-name-key="Played Card">played-card</value>
       <value name="AddUser" display-name-key="Add User">add-user</value>
       <value name="RemoveUser" display-name-key="Remove User">remove-user</value>
+      <value name="ACKUser" display-name-key="Acknowledge User">ack-user</value>
     </property>
     <property name="messageData" display-name-key="Message Data" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="input" required="true" />
     <property name="userID" display-name-key="User ID" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="input" required="true" />

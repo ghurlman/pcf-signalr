@@ -1,6 +1,6 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
-import * as SignalR from "@aspnet/signalr";
 import { IBedlamMessage } from "./IBedlamMessage";
+import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { v4 as NewGuid } from 'uuid';
 
 export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs, IOutputs> {
@@ -50,16 +50,14 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 	}
 
 	private OpenConnection() {
-		this._connection = new SignalR.HubConnectionBuilder()
+		this._connection = new HubConnectionBuilder()
 			.withUrl(this._signalRApi)
-			.configureLogging(SignalR.LogLevel.Information) // for debug
+			.configureLogging(LogLevel.Information) // for debug
+			.withAutomaticReconnect()
 			.build();
 
 		//configure the event when a new message arrives
 		this._connection.on("newMessage", this.processNewMessage.bind(this));
-
-		this._connection.serverTimeoutInMilliseconds = 1000 * 60 * 15;
-		this._connection.keepAliveIntervalInMilliseconds = 100 * 60 * 5;
 
 		//connect
 		this._connection.start()
@@ -102,6 +100,7 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 		switch (msg.type) {
 			case 'add-user':
 			case 'remove-user':
+			case 'ack-user':
 				msg.userId = context.parameters.messageData.raw!;
 				break;
 			case 'new-card':
