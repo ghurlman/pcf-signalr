@@ -4,6 +4,7 @@ export interface IBedlamMessage {
   recipient?: string;
   cardId?: number | number[];
   userId?: string;
+  stage?: string;
   type:
     'new-dealerview-card' |
     'game-stage' |

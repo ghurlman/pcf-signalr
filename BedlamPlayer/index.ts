@@ -109,6 +109,9 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 					context.parameters.messageData.raw!
 						.split(',')
 						.map(val => Number.parseInt(val));
+				break;
+			case 'game-stage':
+				msg.stage = context.parameters.messageData.raw ?? "";
 		}
 
 		this.httpCall(msg);
@@ -133,12 +136,14 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 			case 'new-card':
 			case 'played-card':
 			case 'new-dealerview-card':
-			case 'game-stage':
 			case 'fave-card':
 			case 'unfave-card':
 			case 'choose-winner':
 				output.messageReceivedData = this._message.cardId?.toString();
-		}
+				break;
+			case 'game-stage':
+				output.messageReceivedData = this._message.stage;
+			}
 
 		return output;
 	}
