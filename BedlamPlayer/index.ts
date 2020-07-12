@@ -12,6 +12,7 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 	private _signalRApi: string;
 	private _userId: string | null;
 	lastId: string;
+	private _processedMessages: IBedlamMessage[];
 
 	/**
 	 * Empty constructor.
@@ -34,6 +35,7 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 		this._notifyOutputChanged = notifyOutputChanged;
 		this._signalRApi = context.parameters.signalRHubConnectionUrl.raw ?
 			context.parameters.signalRHubConnectionUrl.raw : "";
+		this._processedMessages = [];
 
 		if (this._signalRApi) {
 			//Create the connection to SignalR Hub
@@ -87,13 +89,13 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 	}
 
 	private sendMessage(context: ComponentFramework.Context<IInputs>) {
-		this.lastId = NewGuid();
 		let msg: IBedlamMessage = {
-			messageID: this.lastId,
+			messageID: NewGuid(),
 			type: context.parameters.messageType.raw,
 			sender: context.parameters.userID.raw!,
 			recipient: context.parameters.recipientID.raw!
 		};
+		this._processedMessages.push(msg);
 
 		switch (msg.type) {
 			case 'add-user':
@@ -130,8 +132,8 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 				break;
 			case 'new-card':
 			case 'played-card':
-			case 'next-card':
-			case 'prev-card':
+			case 'new-dealerview-card':
+			case 'game-stage':
 			case 'fave-card':
 			case 'unfave-card':
 			case 'choose-winner':
@@ -142,10 +144,14 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 	}
 
 	private processNewMessage(message: IBedlamMessage): void {
-		this._message = message;
-		if (this.lastId != message.messageID
-			&& this._context.parameters.userID.raw == message.recipient
+		if (this._processedMessages.every(msg => msg.messageID != message.messageID)
+			&& (
+				this._context.parameters.userID.raw == message.recipient
+				|| message.recipient?.length == 0
+			)
 		) {
+			this._processedMessages.push(message);
+			this._message = message;
 			this._notifyOutputChanged();
 		}
 	}

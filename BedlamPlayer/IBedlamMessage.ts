@@ -5,8 +5,8 @@ export interface IBedlamMessage {
   cardId?: number | number[];
   userId?: string;
   type:
-    'next-card' |
-    'prev-card' |
+    'new-dealerview-card' |
+    'game-stage' |
     'fave-card' |
     'unfave-card' |
     'done-fave' |
