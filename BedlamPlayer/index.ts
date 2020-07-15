@@ -33,43 +33,14 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 		// Add control initialization code
 		this._context = context;
 		this._notifyOutputChanged = notifyOutputChanged;
-		this._signalRApi = context.parameters.signalRHubConnectionUrl.raw ?
-			context.parameters.signalRHubConnectionUrl.raw : "";
+		this._signalRApi = context.parameters.signalRHubConnectionUrl.raw
+			? context.parameters.signalRHubConnectionUrl.raw
+			: "";
 		this._processedMessages = [];
 
-		if (this._signalRApi) {
+		if (this._signalRApi && this._signalRApi.length > 0) {
 			//Create the connection to SignalR Hub
 			this.OpenConnection();
-		}
-
-		const innerDiv = document.createElement("div");
-		innerDiv.style.backgroundColor = "#663399";
-		innerDiv.style.border = "2px solid black";
-		innerDiv.style.borderRadius = "10px"
-		innerDiv.style.height = "100%";
-		innerDiv.style.width = "100%";
-		container.appendChild(innerDiv)
-	}
-
-	/**
-	 * Called when any value in the property bag has changed. This includes field values, data-sets, global values such as container height and width, offline status, control metadata values such as label, visible, etc.
-	 * @param context The entire property bag available to control via Context Object; It contains values as set up by the customizer mapped to names defined in the manifest, as well as utility functions
-	 */
-	public updateView(context: ComponentFramework.Context<IInputs>): void {
-		this._context = context;
-		this._userId = context.parameters.userID.raw;
-
-		if (context.parameters.signalRHubConnectionUrl.raw &&
-			context.parameters.signalRHubConnectionUrl.raw !=
-			this._signalRApi) {
-			this._signalRApi = context.parameters.signalRHubConnectionUrl.raw;
-			this.OpenConnection();
-		}
-
-		if (context.parameters.sendMessage.raw == "true"
-			&& context.parameters.messageData.raw
-			&& context.parameters.userID.raw) {
-			this.sendMessage(context);
 		}
 	}
 
@@ -84,8 +55,34 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 		this._connection.on("newMessage", this.processNewMessage.bind(this));
 
 		//connect
-		this._connection.start()
-			.catch(err => { console.log(err); this._connection!.stop(); });
+		this._connection
+			.start()
+			.catch(err => {
+				console.log(err);
+				this._connection!.stop();
+			});
+	}
+
+	/**
+	 * Called when any value in the property bag has changed. This includes field values, data-sets, global values such as container height and width, offline status, control metadata values such as label, visible, etc.
+	 * @param context The entire property bag available to control via Context Object; It contains values as set up by the customizer mapped to names defined in the manifest, as well as utility functions
+	 */
+	public updateView(context: ComponentFramework.Context<IInputs>): void {
+		this._context = context;
+		this._userId = context.parameters.userID.raw;
+
+		if (
+			context.parameters.signalRHubConnectionUrl.raw
+			&& context.parameters.signalRHubConnectionUrl.raw != this._signalRApi) {
+			this._signalRApi = context.parameters.signalRHubConnectionUrl.raw;
+			this.OpenConnection();
+		}
+
+		if (context.parameters.sendMessage.raw == "true"
+			&& context.parameters.messageData.raw
+			&& context.parameters.userID.raw) {
+			this.sendMessage(context);
+		}
 	}
 
 	private sendMessage(context: ComponentFramework.Context<IInputs>) {
