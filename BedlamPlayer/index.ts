@@ -51,6 +51,28 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 		container.appendChild(innerDiv)
 	}
 
+	/**
+	 * Called when any value in the property bag has changed. This includes field values, data-sets, global values such as container height and width, offline status, control metadata values such as label, visible, etc.
+	 * @param context The entire property bag available to control via Context Object; It contains values as set up by the customizer mapped to names defined in the manifest, as well as utility functions
+	 */
+	public updateView(context: ComponentFramework.Context<IInputs>): void {
+		this._context = context;
+		this._userId = context.parameters.userID.raw;
+
+		if (context.parameters.signalRHubConnectionUrl.raw &&
+			context.parameters.signalRHubConnectionUrl.raw !=
+			this._signalRApi) {
+			this._signalRApi = context.parameters.signalRHubConnectionUrl.raw;
+			this.OpenConnection();
+		}
+
+		if (context.parameters.sendMessage.raw == "true"
+			&& context.parameters.messageData.raw
+			&& context.parameters.userID.raw) {
+			this.sendMessage(context);
+		}
+	}
+
 	private OpenConnection() {
 		this._connection = new HubConnectionBuilder()
 			.withUrl(this._signalRApi)
@@ -64,28 +86,6 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 		//connect
 		this._connection.start()
 			.catch(err => { console.log(err); this._connection!.stop(); });
-	}
-
-	/**
-	 * Called when any value in the property bag has changed. This includes field values, data-sets, global values such as container height and width, offline status, control metadata values such as label, visible, etc.
-	 * @param context The entire property bag available to control via Context Object; It contains values as set up by the customizer mapped to names defined in the manifest, as well as utility functions
-	 */
-	public updateView(context: ComponentFramework.Context<IInputs>): void {
-		this._context = context;
-		this._userId = context.parameters.userID.raw;
-
-		if (context.parameters.sendMessage.raw == "true"
-			&& context.parameters.messageData.raw
-			&& context.parameters.userID.raw) {
-			this.sendMessage(context);
-		}
-
-		if (context.parameters.signalRHubConnectionUrl.raw &&
-			context.parameters.signalRHubConnectionUrl.raw !=
-			this._signalRApi) {
-			this._signalRApi = context.parameters.signalRHubConnectionUrl.raw;
-			this.OpenConnection();
-		}
 	}
 
 	private sendMessage(context: ComponentFramework.Context<IInputs>) {
@@ -105,6 +105,11 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 				break;
 			case 'new-card':
 			case 'played-card':
+			case 'set-dealer':
+			case 'fave-card':
+			case 'unfave-card':
+			case 'new-dealerview-card':
+			case 'choose-winner':
 				msg.cardId =
 					context.parameters.messageData.raw!
 						.split(',')
@@ -115,6 +120,30 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 		}
 
 		this.httpCall(msg);
+	}
+
+	public httpCall(data: IBedlamMessage): void {
+		var xhr = new XMLHttpRequest();
+		xhr.open("post", this._signalRApi + "/messages", true);
+		if (data != null) {
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.setRequestHeader('x-ms-client-principal-name', this._userId!)
+			xhr.send(JSON.stringify(data));
+		}
+		else xhr.send();
+	}
+
+	private processNewMessage(message: IBedlamMessage): void {
+		if (this._processedMessages.every(msg => msg.messageID != message.messageID)
+			&& (
+				this._context.parameters.userID.raw == message.recipient
+				|| message.recipient?.length == 0
+			)
+		) {
+			this._processedMessages.push(message);
+			this._message = message;
+			this._notifyOutputChanged();
+		}
 	}
 
 	/** 
@@ -135,6 +164,7 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 				break;
 			case 'new-card':
 			case 'played-card':
+			case 'set-dealer':
 			case 'new-dealerview-card':
 			case 'fave-card':
 			case 'unfave-card':
@@ -148,36 +178,14 @@ export class BedlamPlayer implements ComponentFramework.StandardControl<IInputs,
 		return output;
 	}
 
-	private processNewMessage(message: IBedlamMessage): void {
-		if (this._processedMessages.every(msg => msg.messageID != message.messageID)
-			&& (
-				this._context.parameters.userID.raw == message.recipient
-				|| message.recipient?.length == 0
-			)
-		) {
-			this._processedMessages.push(message);
-			this._message = message;
-			this._notifyOutputChanged();
-		}
-	}
-
-	public httpCall(data: IBedlamMessage, callback?: (result: any) => any): void {
-		var xhr = new XMLHttpRequest();
-		xhr.open("post", this._signalRApi + "/messages", true);
-		if (data != null) {
-			xhr.setRequestHeader('Content-Type', 'application/json');
-			xhr.setRequestHeader('x-ms-client-principal-name', this._userId!)
-			xhr.send(JSON.stringify(data));
-		}
-		else xhr.send();
-	}
-
 	/** 
 	 * Called when the control is to be removed from the DOM tree. Controls should use this call for cleanup.
 	 * i.e. cancelling any pending remote calls, removing listeners, etc.
 	 */
 	public destroy(): void {
 		// Add code to cleanup control if necessary
-		if (this._connection) this._connection.stop();
+		if (this._connection) {
+			this._connection.stop();
+		}
 	}
 }

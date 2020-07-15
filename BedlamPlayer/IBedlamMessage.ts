@@ -8,6 +8,7 @@ export interface IBedlamMessage {
   type:
     'new-dealerview-card' |
     'game-stage' |
+    'set-dealer' |
     'fave-card' |
     'unfave-card' |
     'done-fave' |

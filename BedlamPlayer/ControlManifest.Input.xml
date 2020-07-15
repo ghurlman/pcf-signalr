@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest>
-  <control namespace="DemoComponents" constructor="BedlamPlayer" version="0.0.8" authoring-manifest="BedlamPlayer_manifest.authoring.xml" display-name-key="Bedlam Player" description-key="BedlamPlayer description" control-type="standard">
+  <control namespace="DemoComponents" constructor="BedlamPlayer" version="0.0.14" authoring-manifest="BedlamPlayer_manifest.authoring.xml" display-name-key="Bedlam Player" description-key="BedlamPlayer description" control-type="standard">
     <!-- property node identifies a specific, configurable piece of data that the control expects from CDS -->
     <property name="signalRHubConnectionUrl" display-name-key="SignalR Hub Connection Url" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="input" required="true" />
     <property name="messageType" display-name-key="Message Type" description-key="Property_Desc_Key" of-type="Enum" usage="input" required="true">
       <value name="NewDealerViewCard" display-name-key="New DealerView Card">new-dealerview-card</value>
       <value name="GameStage" display-name-key="Game Stage">game-stage</value>
+      <value name="SetDealer" display-name-key="Set Dealer">set-dealer</value>
       <value name="FaveCard" display-name-key="Favorite Card">fave-card</value>
       <value name="UnfaveCard" display-name-key="Unfavorite Card">unfave-card</value>
       <value name="DoneFave" display-name-key="Done Favoriting">done-fave</value>
